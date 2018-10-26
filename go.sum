@@ -1,0 +1,6 @@
+github.com/genkiroid/cert v0.0.0-20180522132404-7c2eaa00e5cf h1:G2Ibgfj+E6EkeOWGGgUvjq3cLs+PfgCtF9Yi8CFti5Q=
+github.com/genkiroid/cert v0.0.0-20180522132404-7c2eaa00e5cf/go.mod h1:Pb7nyGYAfDyE/IkU6AJeRshIFko0wJC9cOqeYzYQffk=
+github.com/mattn/go-runewidth v0.0.3 h1:a+kO+98RDGEfo6asOGMmpodZq4FNtnGP54yps8BzLR4=
+github.com/mattn/go-runewidth v0.0.3/go.mod h1:LwmH8dsx7+W8Uxz3IHJYH5QSwggIsqBzpuz5H//U1FU=
+github.com/olekukonko/tablewriter v0.0.1 h1:b3iUnf1v+ppJiOfNX4yxxqfWKMQPZR5yoh8urCTFX88=
+github.com/olekukonko/tablewriter v0.0.1/go.mod h1:vsDQFd/mU46D+Z4whnwzcISnGGzXWMclvtLoiIKAKIo=
