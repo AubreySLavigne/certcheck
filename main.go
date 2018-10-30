@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"sync"
@@ -10,15 +11,9 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-const numWorkers = 3
+const numWorkers = 4
 
 func main() {
-	domains := []string{
-		"neverssl.com",
-		"www.httpvshttps.com",
-		"google.com",
-		"reddit.com",
-	}
 
 	resultChan := make(chan cert.Certificate)
 	inputChan := make(chan string)
@@ -39,8 +34,9 @@ func main() {
 
 	// Send domains to the workers
 	go func() {
-		for _, domain := range domains {
-			inputChan <- domain
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			inputChan <- scanner.Text()
 		}
 		close(inputChan)
 	}()
@@ -48,7 +44,7 @@ func main() {
 	statusTable := tablewriter.NewWriter(os.Stdout)
 	statusTable.SetHeader([]string{"Name", "Status", "Details"})
 
-	errorTable := tablewriter.NewWriter(os.Stdout)
+	errorTable := tablewriter.NewWriter(os.Stderr)
 	errorTable.SetHeader([]string{"Name", "Status", "Error"})
 
 	for res := range resultChan {
