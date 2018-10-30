@@ -13,8 +13,11 @@ import (
 // result is the returned value of the certificate lookup
 type result struct {
 	domain string
-	status string
-	err    error
+	cert   certLookup.Cert
+
+	status  string
+	err     error
+	details string
 }
 
 const numWorkers = 4
@@ -53,22 +56,23 @@ func main() {
 	}()
 
 	statusTable := tablewriter.NewWriter(os.Stdout)
-	statusTable.SetHeader([]string{"Name", "Status"})
+	statusTable.SetHeader([]string{"Name", "Status", "Details"})
 
 	errorTable := tablewriter.NewWriter(os.Stdout)
-	errorTable.SetHeader([]string{"Name", "Error"})
+	errorTable.SetHeader([]string{"Name", "Status", "Error"})
 
 	for res := range resultChan {
 		if res.err != nil {
 			errorTable.Append([]string{
 				res.domain,
+				res.status,
 				fmt.Sprintf("%s", res.err),
 			})
-		}
-		if res.status != "" {
+		} else if res.status != "" {
 			statusTable.Append([]string{
 				res.domain,
 				res.status,
+				res.details,
 			})
 		}
 	}
@@ -86,19 +90,29 @@ func certStatusWorker(inputChan <-chan string, resultChan chan<- result, wg *syn
 }
 
 func getCertStatus(domain string) result {
-	certRange, err := getCertValidRange(domain)
+
+	cert := certLookup.NewCert(domain)
 	res := result{
 		domain: domain,
+		cert:   *cert,
 	}
 
+	if cert.Error != "" {
+		res.status = "SSL Lookup Error"
+		res.err = fmt.Errorf(cert.Error)
+		return res
+	}
+
+	certRange, err := getCertValidRange(res.cert)
 	if err != nil {
 		res.err = err
 	} else if certRange.contains(time.Now()) {
-		res.status = fmt.Sprintf("Valid   - %s", certRange.End)
+		res.status = "Valid"
 	} else {
-		res.status = fmt.Sprintf("Expired - %s", certRange.End)
+		res.status = "Expired"
 	}
 
+	res.details = certRange.End.String()
 	return res
 }
 
@@ -111,11 +125,7 @@ func (d *dateRange) contains(t time.Time) bool {
 	return d.Start.Before(t) && t.Before(d.End)
 }
 
-func getCertValidRange(domain string) (dateRange, error) {
-	cert := certLookup.NewCert(domain)
-	if cert.Error != "" {
-		return dateRange{}, fmt.Errorf("SSL Lookup Error       - %s", cert.Error)
-	}
+func getCertValidRange(cert certLookup.Cert) (dateRange, error) {
 
 	startTime, err := time.Parse("2006-01-02 15:04:05 Z0700 MST", cert.NotBefore)
 	if err != nil {
