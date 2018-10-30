@@ -2,7 +2,10 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"sync"
 
@@ -15,6 +18,12 @@ const numWorkers = 4
 
 func main() {
 
+	// Command Line arguments
+	var filename string
+	flag.StringVar(&filename, "filename", "", "The name of the file containing the target domain names, one per line.")
+	flag.Parse()
+
+	// Main body
 	resultChan := make(chan cert.Certificate)
 	inputChan := make(chan string)
 
@@ -34,7 +43,27 @@ func main() {
 
 	// Send domains to the workers
 	go func() {
-		scanner := bufio.NewScanner(os.Stdin)
+		var infile io.Reader
+		if filename != "" {
+			// Open filestream
+			file, err := os.Open(filename)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer file.Close()
+			infile = bufio.NewReader(file)
+		} else {
+			input, err := os.Stdin.Stat()
+			if err != nil {
+				log.Fatal(err)
+			}
+			if (input.Mode() & os.ModeCharDevice) != 0 {
+				log.Fatal("Terminal Input not supported")
+			}
+			infile = os.Stdin
+		}
+
+		scanner := bufio.NewScanner(infile)
 		for scanner.Scan() {
 			inputChan <- scanner.Text()
 		}
