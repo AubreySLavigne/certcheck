@@ -9,7 +9,7 @@ import (
 	"os"
 	"sync"
 
-	"certcheck/cert"
+	"certcheck/certificate"
 
 	"github.com/olekukonko/tablewriter"
 )
@@ -24,7 +24,7 @@ func main() {
 	flag.Parse()
 
 	// Main body
-	resultChan := make(chan cert.Certificate)
+	resultChan := make(chan certificate.Certificate)
 	inputChan := make(chan string)
 
 	wg := &sync.WaitGroup{}
@@ -97,9 +97,9 @@ func main() {
 	errorTable.Render()
 }
 
-func certStatusWorker(inputChan <-chan string, resultChan chan<- cert.Certificate, wg *sync.WaitGroup) {
+func certStatusWorker(inputChan <-chan string, resultChan chan<- certificate.Certificate, wg *sync.WaitGroup) {
 	for domain := range inputChan {
-		resultChan <- cert.LoadCertificate(domain)
+		resultChan <- certificate.Load(domain)
 	}
 	wg.Done()
 }

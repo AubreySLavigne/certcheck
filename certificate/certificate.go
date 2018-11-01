@@ -1,4 +1,4 @@
-package cert
+package certificate
 
 import (
 	"fmt"
@@ -17,8 +17,8 @@ type Certificate struct {
 	Details string
 }
 
-// LoadCertificate loads the certificate for the provided domain
-func LoadCertificate(domain string) Certificate {
+// Load loads the certificate for the provided domain
+func Load(domain string) Certificate {
 	res := Certificate{
 		Domain: domain,
 		cert:   *certLookup.NewCert(domain),
@@ -30,7 +30,7 @@ func LoadCertificate(domain string) Certificate {
 		return res
 	}
 
-	certRange, err := getCertValidRange(res.cert)
+	certRange, err := certValidRange(res.cert)
 	if err != nil {
 		res.Error = err
 	} else if certRange.contains(time.Now()) {
@@ -44,7 +44,7 @@ func LoadCertificate(domain string) Certificate {
 	return res
 }
 
-func getCertValidRange(cert certLookup.Cert) (dateRange, error) {
+func certValidRange(cert certLookup.Cert) (dateRange, error) {
 
 	startTime, err := time.Parse("2006-01-02 15:04:05 Z0700 MST", cert.NotBefore)
 	if err != nil {
