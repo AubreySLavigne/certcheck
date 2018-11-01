@@ -14,13 +14,11 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-const numWorkers = 4
-
 func main() {
 
 	// Command Line arguments
-	var filename string
-	flag.StringVar(&filename, "filename", "", "The name of the file containing the target domain names, one per line.")
+	filename := flag.String("filename", "", "The name of the file containing the target domain names, one per line.")
+	numWorkers := flag.Int("num-routines", 4, "The number of routines that will process this data concurrently.")
 	flag.Parse()
 
 	// Main body
@@ -30,7 +28,8 @@ func main() {
 	wg := &sync.WaitGroup{}
 
 	// Start all workers
-	for i := 0; i < numWorkers; i++ {
+	for i := 0; i < *numWorkers; i++ {
+		fmt.Printf("Worker %d\n", i)
 		wg.Add(1)
 		go certStatusWorker(inputChan, resultChan, wg)
 	}
@@ -44,9 +43,9 @@ func main() {
 	// Send domains to the workers
 	go func() {
 		var infile io.Reader
-		if filename != "" {
+		if *filename != "" {
 			// Open filestream
-			file, err := os.Open(filename)
+			file, err := os.Open(*filename)
 			if err != nil {
 				log.Fatal(err)
 			}
