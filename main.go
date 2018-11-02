@@ -22,16 +22,15 @@ func main() {
 	flag.Parse()
 
 	// Main body
-	resultChan := make(chan certificate.Certificate)
+	resultChan := make(chan result)
 	inputChan := make(chan string)
 
 	wg := &sync.WaitGroup{}
 
 	// Start all workers
 	for i := 0; i < *numWorkers; i++ {
-		fmt.Printf("Worker %d\n", i)
 		wg.Add(1)
-		go certStatusWorker(inputChan, resultChan, wg)
+		go worker(inputChan, resultChan, wg)
 	}
 
 	// When all workers are done, close the result channel
@@ -76,17 +75,17 @@ func main() {
 	errorTable.SetHeader([]string{"Name", "Status", "Error"})
 
 	for res := range resultChan {
-		if res.Error != nil {
+		if res.cert.Error != nil {
 			errorTable.Append([]string{
-				res.Domain,
-				res.Status,
-				fmt.Sprintf("%s", res.Error),
+				res.cert.Domain,
+				res.cert.Status,
+				fmt.Sprintf("%s", res.cert.Error),
 			})
-		} else if res.Status != "" {
+		} else if res.cert.Status != "" {
 			statusTable.Append([]string{
-				res.Domain,
-				res.Status,
-				res.Details,
+				res.cert.Domain,
+				res.cert.Status,
+				res.cert.Details,
 			})
 		}
 	}
@@ -96,10 +95,18 @@ func main() {
 	errorTable.Render()
 }
 
-func certStatusWorker(inputChan <-chan string, resultChan chan<- certificate.Certificate, wg *sync.WaitGroup) {
+type result struct {
+	cert certificate.Certificate
+	err  error
+}
+
+func worker(inputChan <-chan string, resultChan chan<- result, wg *sync.WaitGroup) {
 	for domain := range inputChan {
 		cert, err := certificate.Load(domain)
-		resultChan <- cert
+		resultChan <- result{
+			cert: cert,
+			err:  err,
+		}
 	}
 	wg.Done()
 }
