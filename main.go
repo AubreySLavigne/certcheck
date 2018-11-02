@@ -98,7 +98,8 @@ func main() {
 
 func certStatusWorker(inputChan <-chan string, resultChan chan<- certificate.Certificate, wg *sync.WaitGroup) {
 	for domain := range inputChan {
-		resultChan <- certificate.Load(domain)
+		cert, err := certificate.Load(domain)
+		resultChan <- cert
 	}
 	wg.Done()
 }

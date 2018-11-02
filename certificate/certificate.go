@@ -18,7 +18,7 @@ type Certificate struct {
 }
 
 // Load loads the certificate for the provided domain
-func Load(domain string) Certificate {
+func Load(domain string) (Certificate, error) {
 	res := Certificate{
 		Domain: domain,
 		cert:   *certLookup.NewCert(domain),
@@ -27,7 +27,7 @@ func Load(domain string) Certificate {
 	if res.cert.Error != "" {
 		res.Status = "SSL Lookup Error"
 		res.Error = fmt.Errorf(res.cert.Error)
-		return res
+		return res, nil
 	}
 
 	certRange, err := certValidRange(res.cert)
@@ -41,7 +41,7 @@ func Load(domain string) Certificate {
 
 	res.Details = certRange.End.String()
 
-	return res
+	return res, nil
 }
 
 func certValidRange(cert certLookup.Cert) (dateRange, error) {
