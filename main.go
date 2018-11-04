@@ -41,6 +41,10 @@ func main() {
 	// Send domains to the workers
 	go processInput(inputChan, *filename)
 
+	write(resultChan)
+}
+
+func write(resultChan <-chan result) {
 	statusTable := tablewriter.NewWriter(os.Stdout)
 	statusTable.SetHeader([]string{"Name", "Status", "Details"})
 
@@ -69,7 +73,7 @@ func main() {
 }
 
 func processInput(inputChan chan<- string, filename string) {
-	close(inputChan)
+	defer close(inputChan)
 
 	var err error
 	if filename != "" {
