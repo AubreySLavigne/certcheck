@@ -1,15 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"sync"
 
 	"certcheck/certificate"
+	"certcheck/input"
 
 	"github.com/olekukonko/tablewriter"
 )
@@ -22,8 +21,8 @@ func main() {
 	flag.Parse()
 
 	// Main body
-	resultChan := make(chan result)
 	inputChan := make(chan string)
+	resultChan := make(chan result)
 
 	wg := &sync.WaitGroup{}
 
@@ -40,34 +39,12 @@ func main() {
 	}()
 
 	// Send domains to the workers
-	go func() {
-		var infile io.Reader
-		if *filename != "" {
-			// Open filestream
-			file, err := os.Open(*filename)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer file.Close()
-			infile = bufio.NewReader(file)
-		} else {
-			input, err := os.Stdin.Stat()
-			if err != nil {
-				log.Fatal(err)
-			}
-			if (input.Mode() & os.ModeCharDevice) != 0 {
-				log.Fatal("Terminal Input not supported")
-			}
-			infile = os.Stdin
-		}
+	go processInput(inputChan, *filename)
 
-		scanner := bufio.NewScanner(infile)
-		for scanner.Scan() {
-			inputChan <- scanner.Text()
-		}
-		close(inputChan)
-	}()
+	write(resultChan)
+}
 
+func write(resultChan <-chan result) {
 	statusTable := tablewriter.NewWriter(os.Stdout)
 	statusTable.SetHeader([]string{"Name", "Status", "Details"})
 
@@ -93,6 +70,21 @@ func main() {
 	statusTable.Render()
 	fmt.Println("")
 	errorTable.Render()
+}
+
+func processInput(inputChan chan<- string, filename string) {
+	defer close(inputChan)
+
+	var err error
+	if filename != "" {
+		err = input.LoadFile(inputChan, filename)
+	} else {
+		err = input.LoadFromPipe(inputChan)
+	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 type result struct {
