@@ -28,8 +28,8 @@ func main() {
 	wg := &sync.WaitGroup{}
 
 	// Start all workers
+	wg.Add(*numWorkers)
 	for i := 0; i < *numWorkers; i++ {
-		wg.Add(1)
 		go worker(inputChan, resultChan, wg)
 	}
 
@@ -42,17 +42,24 @@ func main() {
 	// Send domains to the workers
 	go processInput(inputChan, *filename)
 
-	write(resultChan)
+	// Capture results
+	results := make([]result, 0)
+	for res := range resultChan {
+		results = append(results, res)
+	}
+
+	writeResultsTable(results)
 }
 
-func write(resultChan <-chan result) {
+func writeResultsTable(results []result) {
+	// Handle output
 	statusTable := tablewriter.NewWriter(os.Stdout)
 	statusTable.SetHeader([]string{"Name", "Status", "Details"})
 
 	errorTable := tablewriter.NewWriter(os.Stderr)
 	errorTable.SetHeader([]string{"Name", "Status", "Error"})
 
-	for res := range resultChan {
+	for _, res := range results {
 		if res.cert.Error != nil {
 			errorTable.Append([]string{
 				res.cert.Domain,
