@@ -23,7 +23,7 @@ func main() {
 
 	// Main body
 	inputChan := make(chan string)
-	resultChan := make(chan result)
+	resultChan := make(chan certificate.Certificate)
 
 	wg := &sync.WaitGroup{}
 
@@ -43,15 +43,16 @@ func main() {
 	go processInput(inputChan, *filename)
 
 	// Capture results
-	results := make([]result, 0)
+	results := make([]certificate.Certificate, 0)
 	for res := range resultChan {
 		results = append(results, res)
 	}
 
+	// Write results to output
 	writeResultsTable(results)
 }
 
-func writeResultsTable(results []result) {
+func writeResultsTable(results []certificate.Certificate) {
 	// Handle output
 	statusTable := tablewriter.NewWriter(os.Stdout)
 	statusTable.SetHeader([]string{"Name", "Status", "Details"})
@@ -60,17 +61,17 @@ func writeResultsTable(results []result) {
 	errorTable.SetHeader([]string{"Name", "Status", "Error"})
 
 	for _, res := range results {
-		if res.cert.Error != nil {
+		if res.Error != nil {
 			errorTable.Append([]string{
-				res.cert.Domain,
-				res.cert.Status,
-				fmt.Sprintf("%s", res.cert.Error),
+				res.Domain,
+				res.Status,
+				fmt.Sprintf("%s", res.Error),
 			})
-		} else if res.cert.Status != "" {
+		} else if res.Status != "" {
 			statusTable.Append([]string{
-				res.cert.Domain,
-				res.cert.Status,
-				res.cert.Details,
+				res.Domain,
+				res.Status,
+				res.Details,
 			})
 		}
 	}
@@ -95,18 +96,9 @@ func processInput(inputChan chan<- string, filename string) {
 	}
 }
 
-type result struct {
-	cert certificate.Certificate
-	err  error
-}
-
-func worker(inputChan <-chan string, resultChan chan<- result, wg *sync.WaitGroup) {
+func worker(inputChan <-chan string, resultChan chan<- certificate.Certificate, wg *sync.WaitGroup) {
 	for domain := range inputChan {
-		cert, err := certificate.Load(domain)
-		resultChan <- result{
-			cert: cert,
-			err:  err,
-		}
+		resultChan <- certificate.Load(domain)
 	}
 	wg.Done()
 }
