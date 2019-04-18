@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 
 	"certcheck/certificate"
@@ -17,7 +18,7 @@ func main() {
 
 	// Command Line arguments
 	filename := flag.String("filename", "", "The name of the file containing the target domain names, one per line.")
-	numWorkers := flag.Int("num-routines", 4, "The number of routines that will process this data concurrently.")
+	numWorkers := flag.Int("num-routines", runtime.NumCPU(), "The number of routines that will process this data concurrently.")
 	flag.Parse()
 
 	// Main body
